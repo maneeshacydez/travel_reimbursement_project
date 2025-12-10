@@ -1,59 +1,27 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+// service/travel_service.dart
 import 'package:travel_reimbursement/dashboard/model/travel_modelreq.dart';
+import 'package:travel_reimbursement/dashboard/repository/travel_repo.dart';
 
 
-class RequestService {
-  static const String key = "travel_requests";
+class TravelService {
+  final TravelRepository _repository;
 
-  /// Load all requests
-  static Future<List<TravelRequest>> getRequests() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? raw = prefs.getString(key);
+  TravelService({required TravelRepository repository}) : _repository = repository;
 
-    if (raw == null) return [];
-
-    List decoded = jsonDecode(raw);
-    return decoded.map((e) => TravelRequest.fromMap(e)).toList();
+  Future<List<TravelRequest>> getRequests() async {
+    return await _repository.getTravelRequests();
   }
 
-  /// Add new request
-  static Future<void> addRequest(TravelRequest req) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<TravelRequest> current = await getRequests();
-
-    current.add(req);
-
-    prefs.setString(
-      key,
-      jsonEncode(current.map((e) => e.toMap()).toList()),
-    );
+  Future<TravelRequest> createRequest(String name, int km) async {
+    final newRequest = CreateTravelRequest(name: name, km: km);
+    return await _repository.createTravelRequest(newRequest);
   }
 
-
-
-    /// Update Request Status (Pending → Paid)
-  static Future<void> updateStatus(String id, String newStatus) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    String? raw = prefs.getString(key);
-    if (raw == null) return;
-
-    List decoded = jsonDecode(raw);
-
-    List<TravelRequest> requests =
-        decoded.map((e) => TravelRequest.fromMap(e)).toList();
-
-    for (var req in requests) {
-      if (req.id == id) {
-        req.status = newStatus;
-      }
-    }
-
-    prefs.setString(
-      key,
-      jsonEncode(requests.map((e) => e.toMap()).toList()),
-    );
+  Future<TravelRequest> updateRequest(String id, String status) async {
+    return await _repository.updateTravelRequestStatus(id, status);
   }
 
+  Future<void> deleteRequest(String id) async {
+    await _repository.deleteTravelRequest(id);
+  }
 }

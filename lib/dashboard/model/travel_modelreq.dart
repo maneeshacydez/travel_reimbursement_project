@@ -1,43 +1,69 @@
+// models/travel_request_model.dart
 class TravelRequest {
-  String id;
-  String km;
-  String client;
-  String status;
+  final String id;
+  final String name;
+  final int km;
+  final String status;
+  final DateTime timestamp;
 
   TravelRequest({
-    required this.km,
-    required this.client,
-    required this.status,
-  }) : id = DateTime.now().millisecondsSinceEpoch.toString();
-
-  TravelRequest.withId({
     required this.id,
+    required this.name,
     required this.km,
-    required this.client,
     required this.status,
+    required this.timestamp,
   });
 
-  Map<String, dynamic> toMap() => {
-        "id": id,
-        "km": km,
-        "client": client,
-        "status": status,
-      };
-
-  factory TravelRequest.fromMap(Map<String, dynamic>? map) {
-    if (map == null) {
-      return TravelRequest(
-        km: "0",
-        client: "Unknown",
-        status: "Pending",
-      );
-    }
-
-    return TravelRequest.withId(
-      id: map["id"] ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      km: map["km"] ?? "0",
-      client: map["client"] ?? "Unknown",
-      status: map["status"] ?? "Pending",
+  factory TravelRequest.fromJson(Map<String, dynamic> json) {
+    return TravelRequest(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      km: json['km'] is int ? json['km'] : int.tryParse(json['km'].toString()) ?? 0,
+      status: json['status'] ?? 'pending',
+      timestamp: DateTime.parse(json['timestamp']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'km': km,
+      'status': status,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  TravelRequest copyWith({
+    String? id,
+    String? name,
+    int? km,
+    String? status,
+    DateTime? timestamp,
+  }) {
+    return TravelRequest(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      km: km ?? this.km,
+      status: status ?? this.status,
+      timestamp: timestamp ?? this.timestamp,
+    );
+  }
+}
+
+class CreateTravelRequest {
+  final String name;
+  final int km;
+
+  CreateTravelRequest({
+    required this.name,
+    required this.km,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'km': km,
+    };
   }
 }

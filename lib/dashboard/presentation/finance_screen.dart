@@ -1,6 +1,8 @@
+// Updated FinanceScreen with Provider integration
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:travel_reimbursement/auth/service/auth_service.dart';
-import 'package:travel_reimbursement/dashboard/service/reqservice.dart';
+import 'package:travel_reimbursement/dashboard/controller/finance.dart';
 import 'package:travel_reimbursement/dashboard/model/travel_modelreq.dart';
 import '../../auth/presentation/login_screen.dart';
 
@@ -13,7 +15,6 @@ class FinanceScreen extends StatefulWidget {
 
 class _FinanceScreenState extends State<FinanceScreen>
     with SingleTickerProviderStateMixin {
-  List<TravelRequest> requests = [];
   late TabController tabController;
   int _currentIndex = 0;
 
@@ -26,132 +27,176 @@ class _FinanceScreenState extends State<FinanceScreen>
         _currentIndex = tabController.index;
       });
     });
-    loadRequests();
+    
+    // Load data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<FinanceListProvider>();
+      provider.loadFinanceRequests();
+    });
   }
 
-  Future<void> loadRequests() async {
-    requests = await RequestService.getRequests();
-    setState(() {});
+  Future<void> _refreshData() async {
+    final provider = context.read<FinanceListProvider>();
+    await provider.loadFinanceRequests();
   }
 
   @override
   Widget build(BuildContext context) {
-    final pending = requests.where((e) => e.status == "Pending").toList();
-    final paid = requests.where((e) => e.status == "Paid").toList();
-
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          "Finance Dashboard",
-          style: TextStyle(color: Colors.white, fontSize: 20),
-        ),
-        backgroundColor: Colors.teal,
-        actions: [
-           
-          IconButton(
-            icon: const Icon(
-              Icons.logout,
-              color: Colors.white,
+    return Consumer<FinanceListProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && provider.requests.isEmpty) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
             ),
-            onPressed: () async {
-              await AuthService.logout();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
-            },
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
-              ),
-              child: Row(
+          );
+        }
+
+        if (provider.error.isNotEmpty && provider.requests.isEmpty) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Pending Toggle
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 0;
-                          tabController.animateTo(0);
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _currentIndex == 0
-                              ? Colors.white
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Pending (${pending.length})",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _currentIndex == 0
-                                  ? Colors.teal
-                                  : Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${provider.error}',
+                    style: const TextStyle(color: Colors.red),
                   ),
-                  
-                  // Paid Toggle
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _currentIndex = 1;
-                          tabController.animateTo(1);
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _currentIndex == 1
-                              ? Colors.white
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Paid (${paid.length})",
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _currentIndex == 1
-                                  ? Colors.teal
-                                  : Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _refreshData,
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
             ),
+          );
+        }
+
+        final travelRequests = provider.requests
+            .map((finance) => finance.toTravelRequest())
+            .toList();
+        final pending = travelRequests.where((e) => e.status.toLowerCase() == "pending").toList();
+        final paid = travelRequests.where((e) => e.status.toLowerCase() == "paid").toList();
+
+        return Scaffold(
+          backgroundColor: Colors.grey.shade50,
+          appBar: AppBar(
+            title: const Text(
+              "Finance Dashboard",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            backgroundColor: Colors.teal,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: _refreshData,
+                tooltip: 'Refresh',
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                onPressed: () async {
+                  await AuthService.logout();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(50),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _currentIndex = 0;
+                              tabController.animateTo(0);
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _currentIndex == 0
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Pending (${pending.length})",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _currentIndex == 0
+                                      ? Colors.teal
+                                      : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _currentIndex = 1;
+                              tabController.animateTo(1);
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _currentIndex == 1
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Paid (${paid.length})",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _currentIndex == 1
+                                      ? Colors.teal
+                                      : Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-      body: _buildCurrentList(),
+          body: RefreshIndicator(
+            onRefresh: _refreshData,
+            child: _buildCurrentList(travelRequests, provider),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildCurrentList() {
-    final pending = requests.where((e) => e.status == "Pending").toList();
-    final paid = requests.where((e) => e.status == "Paid").toList();
+  Widget _buildCurrentList(List<TravelRequest> requests, FinanceListProvider provider) {
+    final pending = requests.where((e) => e.status.toLowerCase() == "pending").toList();
+    final paid = requests.where((e) => e.status.toLowerCase() == "paid").toList();
     final currentList = _currentIndex == 0 ? pending : paid;
     final isPending = _currentIndex == 0;
 
@@ -200,7 +245,7 @@ class _FinanceScreenState extends State<FinanceScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: req.status == "Pending"
+                color: req.status.toLowerCase() == "pending"
                     ? Colors.orange.shade100
                     : Colors.green.shade100,
                 width: 1.5,
@@ -215,22 +260,26 @@ class _FinanceScreenState extends State<FinanceScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: req.status == "Pending"
+                  color: req.status.toLowerCase() == "pending"
                       ? Colors.orange.shade50
                       : Colors.green.shade50,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  req.status == "Pending" ? Icons.pending : Icons.check_circle,
-                  color: req.status == "Pending" ? Colors.orange : Colors.green,
+                  req.status.toLowerCase() == "pending" 
+                      ? Icons.pending 
+                      : Icons.check_circle,
+                  color: req.status.toLowerCase() == "pending" 
+                      ? Colors.orange 
+                      : Colors.green,
                 ),
               ),
               title: Text(
-                req.client,
+                req.name,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: req.status == "Pending"
+                  color: req.status.toLowerCase() == "pending"
                       ? Colors.orange.shade800
                       : Colors.green.shade800,
                 ),
@@ -269,7 +318,7 @@ class _FinanceScreenState extends State<FinanceScreen>
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () => showApprovalDialog(req),
+                      onPressed: () => showApprovalDialog(req, provider),
                       child: const Text(
                         "Approve",
                         style: TextStyle(
@@ -315,7 +364,7 @@ class _FinanceScreenState extends State<FinanceScreen>
     );
   }
 
-  void showApprovalDialog(TravelRequest req) {
+  void showApprovalDialog(TravelRequest req, FinanceListProvider provider) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -366,7 +415,7 @@ class _FinanceScreenState extends State<FinanceScreen>
                         ),
                         Expanded(
                           child: Text(
-                            req.client,
+                            req.name,
                             style: const TextStyle(fontSize: 15),
                           ),
                         ),
@@ -406,27 +455,46 @@ class _FinanceScreenState extends State<FinanceScreen>
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(context);
-                await RequestService.updateStatus(req.id, "Paid");
-                loadRequests();
-                
-                // Show success message
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.white),
-                          const SizedBox(width: 10),
-                          Text("${req.client}'s request approved successfully!"),
-                        ],
+                try {
+                  await provider.updateStatus(req.id, "Paid");
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.white),
+                            const SizedBox(width: 10),
+                            Text("${req.name}'s request approved successfully!"),
+                          ],
+                        ),
+                        backgroundColor: Colors.teal,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      backgroundColor: Colors.teal,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.error, color: Colors.white),
+                            const SizedBox(width: 10),
+                            Text("Failed to approve request: $e"),
+                          ],
+                        ),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -451,42 +519,6 @@ class _FinanceScreenState extends State<FinanceScreen>
           ],
         );
       },
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: Colors.teal,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
