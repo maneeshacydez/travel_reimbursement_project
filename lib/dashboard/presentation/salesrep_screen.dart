@@ -114,8 +114,10 @@ class _RepScreenState extends State<RepScreen> with SingleTickerProviderStateMix
           ? FloatingActionButton(
               backgroundColor: Colors.teal,
               child: const Icon(Icons.add, color: Colors.white),
-                onPressed: () =>_showAddRequestDialog(context, provider)):null
-                );
+              onPressed: () => _showAddRequestDialog(context, provider),
+            )
+          : null,
+    );
   }
 
   AppBar _buildAppBar() {
@@ -297,153 +299,141 @@ class _RepScreenState extends State<RepScreen> with SingleTickerProviderStateMix
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+        color: Colors.grey.withOpacity(0.1),
+        blurRadius: 2,
+        offset: const Offset(0, 1),
+        ),
+      ],
       ),
       child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+        color: req.status.toLowerCase() == "pending"
+          ? Colors.orange.shade100
+          : Colors.green.shade100,
+        width: 1.5,
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+        ),
+        leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: req.status.toLowerCase() == "pending"
+            ? Colors.orange.shade50
+            : Colors.green.shade50,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          req.status.toLowerCase() == "pending" ? Icons.pending : Icons.check_circle,
+          color: req.status.toLowerCase() == "pending" ? Colors.orange : Colors.green,
+        ),
+        ),
+        title: Text(
+        req.name,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: req.status.toLowerCase() == "pending"
+            ? Colors.orange.shade800
+            : Colors.green.shade800,
+        ),
+        ),
+        subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+            Icon(
+              Icons.route,
+              size: 14,
+              color: Colors.grey.shade600,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "${req.km} KM",
+              style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              ),
+            ),
+            ],
+          ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+          req.timestamp.toLocal().toString().split('.')[0],
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade500,
+          ),
+          ),
+        ],
+        ),
+        trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
             color: req.status.toLowerCase() == "pending"
-                ? Colors.orange.shade100
-                : Colors.green.shade100,
-            width: 1.5,
-          ),
-        ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          leading: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: req.status.toLowerCase() == "pending"
-                  ? Colors.orange.shade50
-                  : Colors.green.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              req.status.toLowerCase() == "pending" ? Icons.pending : Icons.check_circle,
-              color: req.status.toLowerCase() == "pending" ? Colors.orange : Colors.green,
+              ? Colors.orange.shade50
+              : Colors.green.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+            color: req.status.toLowerCase() == "pending"
+              ? Colors.orange.shade100
+              : Colors.green.shade100,
             ),
           ),
-          title: Text(
-            req.name,
+          child: Text(
+            req.status,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: req.status.toLowerCase() == "pending"
-                  ? Colors.orange.shade800
-                  : Colors.green.shade800,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: req.status.toLowerCase() == "pending"
+              ? Colors.orange.shade700
+              : Colors.green.shade700,
             ),
           ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.route,
-                      size: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "${req.km} KM",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
+          ),
+          if (req.status.toLowerCase() == "pending")
+          PopupMenuButton<String>(
+            onSelected: (value) {
+            if (value == 'delete') {
+              _showDeleteConfirmation(req.id, provider);
+            }
+            },
+            itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(
+              children: [
+                Icon(Icons.delete, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Delete'),
+              ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                req.timestamp.toLocal().toString().split('.')[0],
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                ),
-              ),
+            ),
             ],
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: req.status.toLowerCase() == "pending"
-                      ? Colors.orange.shade50
-                      : Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: req.status.toLowerCase() == "pending"
-                        ? Colors.orange.shade100
-                        : Colors.green.shade100,
-                  ),
-                ),
-                child: Text(
-                  req.status,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: req.status.toLowerCase() == "pending"
-                        ? Colors.orange.shade700
-                        : Colors.green.shade700,
-                  ),
-                ),
-              ),
-              if (req.status.toLowerCase() == "pending")
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'approve') {
-                      provider.updateRequestStatus(req.id, 'paid');
-                    } else if (value == 'delete') {
-                      _showDeleteConfirmation(req.id, provider);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'approve',
-                      child: Row(
-                        children: [
-                          Icon(Icons.check, color: Colors.green),
-                          SizedBox(width: 8),
-                          Text('Approve'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+        ],
         ),
+      ),
       ),
     );
   }
@@ -455,144 +445,141 @@ class _RepScreenState extends State<RepScreen> with SingleTickerProviderStateMix
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (bottomSheetContext) => Padding(
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
-          top: 16,
         ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40),
+                      const Text(
+                        "New Travel Request",
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.teal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black),
+                        onPressed: () => Navigator.pop(bottomSheetContext),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Client Name",
+                      prefixIcon: Icon(Icons.person, color: Colors.teal),
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                  const Text(
-                    "New Travel Request",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _kmController,
+                    decoration: const InputDecoration(
+                      labelText: "KM",
+                      prefixIcon: Icon(Icons.route, color: Colors.teal),
+                      border: OutlineInputBorder(),
                     ),
+                    keyboardType: TextInputType.number,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black),
-                    onPressed: () => Navigator.pop(bottomSheetContext),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: provider.isLoading
+                        ? null
+                        : () async {
+                            // Validate inputs
+                            if (_nameController.text.trim().isEmpty || 
+                                _kmController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please fill all fields"),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final km = int.tryParse(_kmController.text.trim());
+                            if (km == null || km <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Please enter a valid KM value"),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            // Call provider to add request
+                            final success = await provider.addRequest(
+                              _nameController.text.trim(),
+                              km,
+                            );
+
+                            if (!context.mounted) return;
+
+                            if (success) {
+                              Navigator.pop(bottomSheetContext);
+                              provider.fetchRequests();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Request added successfully!"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(provider.error ?? "Something went wrong"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: Colors.teal,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: provider.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            "Submit Request",
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
                   ),
+                  const SizedBox(height: 10),
                 ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: "Client Name",
-                  prefixIcon: Icon(Icons.person, color: Colors.teal),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _kmController,
-                decoration: const InputDecoration(
-                  labelText: "KM",
-                  prefixIcon: Icon(Icons.route, color: Colors.teal),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: provider.isLoading
-                      ? null
-                      : () async {
-                          // Validate inputs
-                          if (_nameController.text.trim().isEmpty || _kmController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Please fill all fields"),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                            return;
-                          }
-
-                          final km = int.tryParse(_kmController.text.trim());
-                          if (km == null || km <= 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Please enter a valid KM value"),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                            return;
-                          }
-
-                          // Call provider to add request
-                        final success = await provider.addRequest(
-  _nameController.text.trim(),
-  km,
-);
-
-if (!context.mounted) return;
-
-if (success) {
-  Navigator.pop(bottomSheetContext);
-  provider.fetchRequests();
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text("Request added successfully!"),
-      backgroundColor: Colors.green,
-    ),
-  );
-} else {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(provider.error ?? "Something went wrong"),
-      backgroundColor: Colors.red,
-    ),);}},
-
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.teal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: provider.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          "Submit Request",
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
+            ),
           ),
         ),
       ),

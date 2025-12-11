@@ -1,107 +1,90 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:travel_reimbursement/dashboard/controller/new_req_provider.dart';
+
+// Replace this with your actual provider import
+// import 'package:travel_reimbursement/dashboard/controller/reqst_create_provider.dart';
 
 class NewRequestForm extends StatefulWidget {
+  const NewRequestForm({super.key});
+
   @override
   State<NewRequestForm> createState() => _NewRequestFormState();
 }
 
 class _NewRequestFormState extends State<NewRequestForm> {
   final _formKey = GlobalKey<FormState>();
-  final _kmController = TextEditingController();
-  final _clientController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _kmController = TextEditingController();
 
   @override
-  void dispose() {
-    _kmController.dispose();
-    _clientController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final km = double.tryParse(_kmController.text.trim()) ?? 0.0;
-    final clientName = _clientController.text.trim();
-
-    if (km <= 0) {
-      _showSnackBar('Please enter a valid KM value', isError: true);
-      return;
-    }
-
-    // Get the provider from context
-    final provider = context.read<ReqstCreateProvider>();
-
-    try {
-      await provider.createRequest(
-        name: clientName,
-        km: km,
-        status: 'pending',
-      );
-
-      if (!mounted) return;
-
-      if (provider.error == null) {
-        _showSnackBar('Travel request created successfully!', isError: false);
-        Navigator.pop(context, true); // Return success to refresh the list
-      } else {
-        _showSnackBar('Error: ${provider.error}', isError: true);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar('Failed to create request: $e', isError: true);
-    }
-  }
-
-  void _showSnackBar(String message, {required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-@override
-Widget build(BuildContext context) {
-  return Consumer<ReqstCreateProvider>(
-    builder: (context, provider, child) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: SafeArea(
-          child: SingleChildScrollView(
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 16,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // handle
-                Container(
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                const Text(
-                  "New Travel Request",
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.teal,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                Form(
+            child: SafeArea(
+              child: Material(
+                color: Colors.transparent,
+                child: Form(
                   key: _formKey,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const SizedBox(width: 40),
+                          const Text(
+                            "New Travel Request",
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.teal,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.black),
+                            onPressed: () => Navigator.pop(context),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Client Name Field
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: "Client Name",
+                          prefixIcon: Icon(Icons.person, color: Colors.teal),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter client name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // KM Field
                       TextFormField(
                         controller: _kmController,
                         decoration: const InputDecoration(
@@ -109,70 +92,108 @@ Widget build(BuildContext context) {
                           prefixIcon: Icon(Icons.route, color: Colors.teal),
                           border: OutlineInputBorder(),
                         ),
-                        keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: TextInputType.number,
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter KM';
                           }
-                          final km = double.tryParse(value);
+                          final km = int.tryParse(value.trim());
                           if (km == null || km <= 0) {
-                            return 'Please enter a valid KM';
+                            return 'Please enter a valid KM value';
                           }
                           return null;
                         },
                       ),
-
-                      const SizedBox(height: 12),
-
-                      TextFormField(
-                        controller: _clientController,
-                        decoration: const InputDecoration(
-                          labelText: "Client Name",
-                          prefixIcon: Icon(Icons.person, color: Colors.teal),
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter client name';
-                          }
-                          return null;
+                      const SizedBox(height: 20),
+                      
+                      // Submit Button
+                      Consumer<dynamic>(
+                        builder: (context, provider, child) {
+                          final isLoading = false; // Replace with: provider.isLoading
+                          
+                          return ElevatedButton(
+                            onPressed: isLoading
+                                ? null
+                                : () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      final km = int.parse(_kmController.text.trim());
+                                      
+                                      // Call your provider method here
+                                      // final success = await provider.addRequest(
+                                      //   _nameController.text.trim(),
+                                      //   km,
+                                      // );
+                                      
+                                      // Handle success/error
+                                      if (!context.mounted) return;
+                                      
+                                      // if (success) {
+                                      //   Navigator.pop(context);
+                                      //   ScaffoldMessenger.of(context).showSnackBar(
+                                      //     const SnackBar(
+                                      //       content: Text("Request added successfully!"),
+                                      //       backgroundColor: Colors.green,
+                                      //     ),
+                                      //   );
+                                      // } else {
+                                      //   ScaffoldMessenger.of(context).showSnackBar(
+                                      //     SnackBar(
+                                      //       content: Text(provider.error ?? "Something went wrong"),
+                                      //       backgroundColor: Colors.red,
+                                      //     ),
+                                      //   );
+                                      // }
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              backgroundColor: Colors.teal,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Submit Request",
+                                    style: TextStyle(fontSize: 16, color: Colors.white),
+                                  ),
+                          );
                         },
                       ),
+                      const SizedBox(height: 10),
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: provider.isLoading ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.teal,
-                    ),
-                    child: provider.isLoading
-                        ? CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : const Text(
-                            "Submit",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                  ),
-                ),
-
-                SizedBox(height: 10),
-              ],
+              ),
             ),
           ),
         ),
-      );
-    },
-  );
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _kmController.dispose();
+    super.dispose();
+  }
 }
+
+// If you're calling this from a showModalBottomSheet, use it like this:
+void showNewRequestForm(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => const NewRequestForm(),
+  );
 }

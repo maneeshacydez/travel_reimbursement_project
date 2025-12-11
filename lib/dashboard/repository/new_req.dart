@@ -1,5 +1,3 @@
-// lib/dashboard/repository/reqstcreate_repository.dart
-
 import 'package:travel_reimbursement/dashboard/model/putreq_model.dart';
 import 'package:travel_reimbursement/dashboard/service/newreq_service.dart';
 
@@ -19,9 +17,19 @@ class ReqstCreateRepositoryImpl implements ReqstCreateRepository {
   @override
   Future<ReqstCreate> createRequest(ReqstCreate request) async {
     try {
+      print('📝 Creating request: ${request.toString()}');
+      
       final response = await _service.createRequest(request);
-      return ReqstCreate.fromJson(response['data']);
+      
+      print('📥 Create Response: $response');
+      
+      final createdRequest = ReqstCreate.fromJson(response['data']);
+      
+      print('✅ Request created successfully: ${createdRequest.toString()}');
+      
+      return createdRequest;
     } catch (e) {
+      print('❌ Create Request Error: $e');
       throw Exception('Failed to create request: $e');
     }
   }
@@ -29,10 +37,21 @@ class ReqstCreateRepositoryImpl implements ReqstCreateRepository {
   @override
   Future<List<ReqstCreate>> getAllRequests() async {
     try {
+      print('📡 Fetching all requests...');
+      
       final response = await _service.getAllRequests();
+      
+      print('📥 Get All Response: $response');
+      
       final List<dynamic> data = response['data'] ?? [];
-      return data.map((json) => ReqstCreate.fromJson(json)).toList();
+      
+      final requests = data.map((json) => ReqstCreate.fromJson(json)).toList();
+      
+      print('✅ Fetched ${requests.length} requests successfully');
+      
+      return requests;
     } catch (e) {
+      print('❌ Get All Requests Error: $e');
       throw Exception('Failed to fetch requests: $e');
     }
   }
@@ -40,9 +59,19 @@ class ReqstCreateRepositoryImpl implements ReqstCreateRepository {
   @override
   Future<ReqstCreate> getRequestById(String id) async {
     try {
+      print('📡 Fetching request by ID: $id');
+      
       final response = await _service.getRequestById(id);
-      return ReqstCreate.fromJson(response['data']);
+      
+      print('📥 Get By ID Response: $response');
+      
+      final request = ReqstCreate.fromJson(response['data']);
+      
+      print('✅ Request fetched successfully: ${request.toString()}');
+      
+      return request;
     } catch (e) {
+      print('❌ Get Request By ID Error: $e');
       throw Exception('Failed to fetch request: $e');
     }
   }
@@ -50,8 +79,13 @@ class ReqstCreateRepositoryImpl implements ReqstCreateRepository {
   @override
   Future<void> deleteRequest(String id) async {
     try {
+      print('🗑️ Deleting request: $id');
+      
       await _service.deleteRequest(id);
+      
+      print('✅ Request deleted successfully: $id');
     } catch (e) {
+      print('❌ Delete Request Error: $e');
       throw Exception('Failed to delete request: $e');
     }
   }
@@ -59,9 +93,19 @@ class ReqstCreateRepositoryImpl implements ReqstCreateRepository {
   @override
   Future<ReqstCreate> updateRequest(ReqstCreate request) async {
     try {
+      print('🔄 Updating request: ${request.toString()}');
+      
       final response = await _service.updateRequest(request);
-      return ReqstCreate.fromJson(response['data']);
+      
+      print('📥 Update Response: $response');
+      
+      final updatedRequest = ReqstCreate.fromJson(response['data']);
+      
+      print('✅ Request updated successfully: ${updatedRequest.toString()}');
+      
+      return updatedRequest;
     } catch (e) {
+      print('❌ Update Request Error: $e');
       throw Exception('Failed to update request: $e');
     }
   }

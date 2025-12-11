@@ -31,9 +31,11 @@ class TravelProvider with ChangeNotifier {
       notifyListeners();
 
       _requests = await _repository.getTravelRequests();
+      
+      print("✅ Fetched ${_requests.length} requests successfully");
     } catch (e) {
       _error = e.toString();
-      print("Fetch Error: $e");
+      print("❌ Fetch Error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -49,21 +51,32 @@ class TravelProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      print("📝 Adding request: name=$name, km=$km");
+
       final body = CreateTravelRequest(name: name, km: km);
+      
+      print("📤 Request body created: ${body.toJson()}");
+      
       final created = await _repository.createTravelRequest(body);
 
+      print("✅ Request created successfully: ${created.toString()}");
+
+      // Add the new request to the list
       _requests.add(created);
 
+      _error = null;
+      _isLoading = false;
       notifyListeners();
+      
       return true; // success
     } catch (e) {
       _error = e.toString();
-      print("Add Error: $e");
-      notifyListeners();
-      return false; // failed
-    } finally {
+      print("❌ Add Error: $e");
+      
       _isLoading = false;
       notifyListeners();
+      
+      return false; // failed
     }
   }
 
@@ -73,17 +86,25 @@ class TravelProvider with ChangeNotifier {
   Future<void> updateRequestStatus(String id, String status) async {
     try {
       _isLoading = true;
+      _error = null;
       notifyListeners();
+
+      print("🔄 Updating request $id to status: $status");
 
       final updated = await _repository.updateTravelRequestStatus(id, status);
 
       final index = _requests.indexWhere((req) => req.id == id);
-      if (index != -1) _requests[index] = updated;
+      if (index != -1) {
+        _requests[index] = updated;
+        print("✅ Request $id updated successfully");
+      } else {
+        print("⚠️ Request $id not found in local list");
+      }
 
       _error = null;
     } catch (e) {
       _error = e.toString();
-      print("Status Update Error: $e");
+      print("❌ Status Update Error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -96,15 +117,21 @@ class TravelProvider with ChangeNotifier {
   Future<void> deleteRequest(String id) async {
     try {
       _isLoading = true;
+      _error = null;
       notifyListeners();
 
+      print("🗑️ Deleting request: $id");
+
       await _repository.deleteTravelRequest(id);
+      
       _requests.removeWhere((req) => req.id == id);
+
+      print("✅ Request $id deleted successfully");
 
       _error = null;
     } catch (e) {
       _error = e.toString();
-      print("Delete Error: $e");
+      print("❌ Delete Error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
